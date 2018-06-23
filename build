@@ -149,7 +149,10 @@ function setup_variables() {
     YLW="\033[01;33m"
 
     # Configuration variables
-    CONFIGURATION=("--disable-multilib" "--disable-werror")
+    CONFIGURATION=(
+        "CFLAGS=-g0 -O2" "CXXFLAGS=-g0 -O2"
+        "--disable-multilib" "--disable-werror"
+    )
     JOBS="-j$(($(nproc --all) + 1))"
 
     # Binary versions
