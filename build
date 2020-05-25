@@ -337,9 +337,9 @@ function download_sources() {
         wget https://www.mpfr.org/mpfr-current/${MPFR}.tar.xz
     fi
 
-    if [[ ! -f ${GMP}.tar.xz ]]; then
+    if [[ ! -f ${GMP}.tar.lz ]]; then
         header "DOWNLOADING GMP"
-        wget https://ftp.gnu.org/gnu/gmp/${GMP}.tar.xz
+        wget https://ftp.gnu.org/gnu/gmp/${GMP}.tar.lz
     fi
 
     if [[ ! -f ${MPC}.tar.gz ]]; then
@@ -357,9 +357,9 @@ function download_sources() {
         wget https://cdn.kernel.org/pub/linux/kernel/v${LINUX/.*/}.x/linux-${LINUX}.tar.xz
     fi
 
-    if [[ ! -f binutils-${BINUTILS}.tar.xz ]]; then
+    if [[ ! -f binutils-${BINUTILS}.tar.lz ]]; then
         header "DOWNLOADING BINUTILS ${BINUTILS} FOR GCC ${VERSION}"
-        wget https://ftp.gnu.org/gnu/binutils/binutils-${BINUTILS}.tar.xz
+        wget https://ftp.gnu.org/gnu/binutils/binutils-${BINUTILS}.tar.lz
     fi
 
     if [[ ! -f ${ISL}.tar.xz ]]; then
@@ -406,11 +406,11 @@ function extract() {
 function extract_sources() {
     header "EXTRACTING DOWNLOADED TARBALLS"
     extract ${MPFR}.tar.xz ../${MPFR}
-    extract ${GMP}.tar.xz ../${GMP}
+    extract ${GMP}.tar.lz ../${GMP}
     extract ${MPC}.tar.gz ../${MPC}
     extract ${GLIBC}.tar.xz ../${GLIBC}
     extract linux-${LINUX}.tar.xz ../linux
-    extract binutils-${BINUTILS}.tar.xz ../binutils
+    extract binutils-${BINUTILS}.tar.lz ../binutils
     extract ${ISL}.tar.xz ../${ISL}
     if [[ ${SOURCE} == "linaro" && ${VERSION} -ge 8 ]]; then
         # We can't use extract function here as this ships other GNU tools
