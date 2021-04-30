@@ -125,7 +125,7 @@ function format_time() {
 function check_sudo() {
     echo
     echo "Checking if sudo is available, please enter your password if a prompt appears!"
-    if ! sudo -v 2>/dev/null; then
+    if ! sudo true 2>/dev/null; then
         warn "Sudo is not available! Disabling the option for tmpfs..." -n
         NO_TMPFS=true
     fi
