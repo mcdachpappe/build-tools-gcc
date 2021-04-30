@@ -153,13 +153,13 @@ function setup_variables() {
     JOBS="-j$(($(nproc --all) + 1))"
 
     # Binary versions
-    BINUTILS="2.34"
-    GMP="gmp-6.2.0"
+    BINUTILS="2.36.1"
+    GMP="gmp-6.2.1"
     MPFR="mpfr-4.1.0"
-    MPC="mpc-1.2.0"
-    ISL="isl-0.22.1"
-    GLIBC="glibc-2.32"
-    LINUX="5.4.61"
+    MPC="mpc-1.2.1"
+    ISL="isl-0.23"
+    GLIBC="glibc-2.33"
+    LINUX="5.11.11"
 
     # Start of script
     START=$(date +%s)
@@ -226,7 +226,9 @@ function parse_parameters() {
     "gnu:7") GCC=gcc-7.5.0 ;;
     "gnu:8") GCC=gcc-8.4.0 ;;
     "gnu:9") GCC=gcc-9.3.0 ;;
-    "gnu:10") die "GCC 10.0 is currently a WIP so there is no tarball to download!" ;;
+    "gnu:10") GCC=gcc-10.3.0 ;;
+    "gnu:11") GCC=gcc-11.1.0 ;;
+    "gnu:12") die "GCC 12.0 is currently a WIP so there is no tarball to download!" ;;
     "linaro:4")
         GCC=linaro-4.9-2017.01
         GLIBC="glibc-2.27"
@@ -238,12 +240,14 @@ function parse_parameters() {
         ISL="isl-0.17.1"
         ;;
     "linaro:6") GCC=linaro-snapshot-6.5-2018.11 ;;
-    "linaro:7") GCC=linaro-snapshot-7.5-2019.11 ;;
+    "linaro:7") GCC=linaro-7.5-2019.12 ;;
     # ARM has taken the responsibility from Linaro since 8.x
     # See later in this script why it's defined like this
     "linaro:8") GCC=8.3-2019.03 ;;
-    "linaro:9") die "There's no such thing as Linaro 9.x Clannad..." -h ;;
-    "linaro:10") die "There's no such thing as Linaro 10.x Clannad..." -h ;;
+    "linaro:9") GCC=9.2-2019.12 ;;
+    "linaro:10") GCC=10.2-2020.11 ;;
+    "linaro:11") die "There's no such thing as Linaro 11.x Clannad..." -h ;;
+    "linaro:12") die "There's no such thing as Linaro 12.x Clannad..." -h ;;
     *) die "Absent or invalid GCC version or source specified!" -h ;;
     esac
 }
