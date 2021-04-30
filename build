@@ -9,7 +9,6 @@
 #
 # GCC cross compiler  compilation script
 
-
 ###########
 # SOURCES #
 ###########
@@ -24,7 +23,6 @@
 # https://www.kernel.org/
 # https://git.linaro.org/toolchain/gcc.git # linaro and gnu
 
-
 #############
 # FUNCTIONS #
 #############
@@ -33,7 +31,6 @@
 function echo() {
     command echo -e "${@}"
 }
-
 
 # Help menu function
 function help_menu() {
@@ -62,37 +59,33 @@ function help_menu() {
     echo
 }
 
-
 # Prints a formatted header to let the user know what's being done
 function header() {
-    [[ "${*}" =~ "--no-first-echo" ]] || echo
+    [[ ${*} =~ "--no-first-echo" ]] || echo
     # shellcheck disable=SC2034
     echo "${RED}====$(for i in $(seq ${#1}); do echo "=\c"; done)===="
     echo "==  ${1}  =="
     # shellcheck disable=SC2034
     echo "====$(for i in $(seq ${#1}); do echo "=\c"; done)====${RST}"
-    [[ "${*}" =~ "--no-second-echo" ]] || echo
+    [[ ${*} =~ "--no-second-echo" ]] || echo
 }
-
 
 # Prints an error in bold red
 function die() {
     [[ -z ${VERBOSE} ]] && exec 1>&5 2>&6
     echo ""
     echo "${RED}${1}${RST}"
-    [[ "${*}" =~ "-n" ]] && echo
-    [[ "${*}" =~ "-h" ]] && help_menu
+    [[ ${*} =~ "-n" ]] && echo
+    [[ ${*} =~ "-h" ]] && help_menu
     exit
 }
-
 
 # Prints a warning in bold yellow
 function warn() {
     echo ""
     echo "${YLW}${1}${RST}"
-    [[ "${*}" =~ "-n" ]] && echo
+    [[ ${*} =~ "-n" ]] && echo
 }
-
 
 # Formats the time for the end
 function format_time() {
@@ -128,7 +121,6 @@ function format_time() {
     echo "${TIME_STRING}"
 }
 
-
 # Check if user needs to enter sudo password or not
 function check_sudo() {
     echo
@@ -139,7 +131,6 @@ function check_sudo() {
     fi
 }
 
-
 # Unmount tmpfs
 function unmount_tmpfs() {
     if [[ -z ${NO_TMPFS} ]]; then
@@ -149,18 +140,15 @@ function unmount_tmpfs() {
     fi
 }
 
-
 # git clone wrapper
 function git_clone() {
     git clone ${DEPTH_FLAG:+"--depth=1"} "${@}"
 }
 
-
 # git fetch wrapper
 function git_fetch() {
     git fetch ${DEPTH_FLAG:+"--depth=1"} "${@}"
 }
-
 
 # Initial setup
 function setup_variables() {
@@ -171,7 +159,7 @@ function setup_variables() {
     YLW="\033[01;33m"
 
     # Configuration variables
-    CONFIGURATION=( "--disable-multilib" "--disable-werror" )
+    CONFIGURATION=("--disable-multilib" "--disable-werror")
     JOBS="-j$(($(nproc --all) + 1))"
     DEPTH_FLAG=true
 
@@ -189,27 +177,29 @@ function setup_variables() {
     START=$(date +%s)
 }
 
-
 # Parse parameters
 function parse_parameters() {
     while [[ ${#} -ge 1 ]]; do
         case "${1}" in
-            # REQUIRED FLAGS
-            "-a"|"--arch") shift && ARCH=${1} ;;
-            "-s"|"--source") shift && SOURCE=${1} ;;
-            "-v"|"--version") shift && VERSION=${1} ;;
+        # REQUIRED FLAGS
+        "-a" | "--arch") shift && ARCH=${1} ;;
+        "-s" | "--source") shift && SOURCE=${1} ;;
+        "-v" | "--version") shift && VERSION=${1} ;;
 
-            # OPTIONAL FLAGS
-            "-f"|"--full-src") DEPTH_FLAG=false ;;
-            "-j"|"--jobs") shift && JOBS=-j${1} ;;
-            "-nt"|"--no-tmpfs") NO_TMPFS=true ;;
-            "-nu"|"--no-update") NO_UPDATE=true ;;
-            "-p"|"--package") shift && COMPRESSION=${1} ;;
-            "-t"|"--tarballs") TARBALLS=true ;;
-            "-V"|"--verbose") VERBOSE=true ;;
+        # OPTIONAL FLAGS
+        "-f" | "--full-src") DEPTH_FLAG=false ;;
+        "-j" | "--jobs") shift && JOBS=-j${1} ;;
+        "-nt" | "--no-tmpfs") NO_TMPFS=true ;;
+        "-nu" | "--no-update") NO_UPDATE=true ;;
+        "-p" | "--package") shift && COMPRESSION=${1} ;;
+        "-t" | "--tarballs") TARBALLS=true ;;
+        "-V" | "--verbose") VERBOSE=true ;;
 
-            # HELP!
-            "-h"|"--help") help_menu; exit ;;
+        # HELP!
+        "-h" | "--help")
+            help_menu
+            exit
+            ;;
         esac
 
         shift
@@ -220,80 +210,97 @@ function parse_parameters() {
 
     # Default values
     case "${ARCH}" in
-        "arm") TARGET="arm-linux-gnueabi" ;;
-        "arm64") TARGET="aarch64-linux-gnu" ;;
-        "i686") TARGET="i686-linux-gnu" ;;
-        "x86_64") [[ ${VERSION} -le 5 ]] && die "Will not build, Use newer version instead" -n
-                  TARGET="x86_64-linux-gnu" ;;
-        *) die "Absent or invalid arch specified!" -h ;;
+    "arm") TARGET="arm-linux-gnueabi" ;;
+    "arm64") TARGET="aarch64-linux-gnu" ;;
+    "i686") TARGET="i686-linux-gnu" ;;
+    "x86_64")
+        [[ ${VERSION} -le 5 ]] && die "Will not build, Use newer version instead" -n
+        TARGET="x86_64-linux-gnu"
+        ;;
+    *) die "Absent or invalid arch specified!" -h ;;
     esac
 
     # Kernel architecture; i686 and x86_64 targets use x86
-    [[ ${ARCH} = "i686" || ${ARCH} = "x86_64" ]] && KERNEL_ARCH=x86 || KERNEL_ARCH=${ARCH}
+    [[ ${ARCH} == "i686" || ${ARCH} == "x86_64" ]] && KERNEL_ARCH=x86 || KERNEL_ARCH=${ARCH}
 
     if [[ -z ${TARBALLS} ]]; then
         # Set GCC branch based on version and Linaro or not
         case "${SOURCE}:${VERSION}" in
-            "gnu:4") GCC=gcc-4_9-branch
-                     BINUTILS_git="binutils-2_29-branch"
-                     GLIBC="glibc-2.26"
-                     ISL="isl-0.17.1" ;;
-            "gnu:5") GCC=gcc-5-branch
-                     GLIBC="glibc-2.27"
-                     ISL="isl-0.17.1" ;;
-            "gnu:6") GCC=gcc-6-branch ;;
-            "gnu:7") GCC=gcc-7-branch ;;
-            "gnu:8") GCC=gcc-8-branch ;;
-            "gnu:9") GCC=gcc-9-branch ;;
-            "gnu:10") GCC=master ;;
-            "linaro:4") GCC=linaro-local/releases/linaro-4.9-2017.01
-                        GLIBC="glibc-2.27"
-                        ISL="isl-0.17.1" ;;
-            "linaro:5") GCC=linaro-local/gcc-5-integration-branch
-                        GLIBC="glibc-2.27"
-                        ISL="isl-0.17.1" ;;
-            "linaro:6") GCC=linaro-local/gcc-6-integration-branch ;;
-            "linaro:7") GCC=linaro-local/gcc-7-integration-branch ;;
-            # ARM has taken the responsibility from Linaro since 8.x
-            "linaro:8") GCC=linaro-local/ARM/arm-8-branch ;;
-            "linaro:9") die "There's no such thing as Linaro 9.x Clannad..." -h ;;
-            "linaro:10") die "There's no such thing as Linaro 10.x Clannad..." -h ;;
-            *) die "Absent or invalid GCC version or source specified!" -h ;;
+        "gnu:4")
+            GCC=gcc-4_9-branch
+            BINUTILS_git="binutils-2_29-branch"
+            GLIBC="glibc-2.26"
+            ISL="isl-0.17.1"
+            ;;
+        "gnu:5")
+            GCC=gcc-5-branch
+            GLIBC="glibc-2.27"
+            ISL="isl-0.17.1"
+            ;;
+        "gnu:6") GCC=gcc-6-branch ;;
+        "gnu:7") GCC=gcc-7-branch ;;
+        "gnu:8") GCC=gcc-8-branch ;;
+        "gnu:9") GCC=gcc-9-branch ;;
+        "gnu:10") GCC=master ;;
+        "linaro:4")
+            GCC=linaro-local/releases/linaro-4.9-2017.01
+            GLIBC="glibc-2.27"
+            ISL="isl-0.17.1"
+            ;;
+        "linaro:5")
+            GCC=linaro-local/gcc-5-integration-branch
+            GLIBC="glibc-2.27"
+            ISL="isl-0.17.1"
+            ;;
+        "linaro:6") GCC=linaro-local/gcc-6-integration-branch ;;
+        "linaro:7") GCC=linaro-local/gcc-7-integration-branch ;;
+        # ARM has taken the responsibility from Linaro since 8.x
+        "linaro:8") GCC=linaro-local/ARM/arm-8-branch ;;
+        "linaro:9") die "There's no such thing as Linaro 9.x Clannad..." -h ;;
+        "linaro:10") die "There's no such thing as Linaro 10.x Clannad..." -h ;;
+        *) die "Absent or invalid GCC version or source specified!" -h ;;
         esac
     else
         # Set GCC branch based on version and Linaro or not
         case "${SOURCE}:${VERSION}" in
-            "gnu:4") GCC=gcc-4.9.4
-                     BINUTILS_tar="2.29.1"
-                     GLIBC="glibc-2.26"
-                     ISL="isl-0.17.1"
-                     EXT=gz ;;
-            "gnu:5") GCC=gcc-5.5.0
-                     GLIBC="glibc-2.27"
-                     ISL="isl-0.17.1" ;;
-            "gnu:6") GCC=gcc-6.5.0 ;;
-            "gnu:7") GCC=gcc-7.5.0 ;;
-            "gnu:8") GCC=gcc-8.4.0 ;;
-            "gnu:9") GCC=gcc-9.3.0 ;;
-            "gnu:10") die "GCC 10.0 is currently a WIP so there is no tarball to download! Either use the git repo or choose a new version..." ;;
-            "linaro:4") GCC=linaro-4.9-2017.01
-                        GLIBC="glibc-2.27"
-                        ISL="isl-0.17.1" ;;
-            "linaro:5") GCC=linaro-5.5-2017.10
-                        GLIBC="glibc-2.27"
-                        ISL="isl-0.17.1" ;;
-            "linaro:6") GCC=linaro-snapshot-6.5-2018.11 ;;
-            "linaro:7") GCC=linaro-snapshot-7.5-2019.11 ;;
-            # ARM has taken the responsibility from Linaro since 8.x
-            # See later in this script why it's defined like this
-            "linaro:8") GCC=8.3-2019.03 ;;
-            "linaro:9") die "There's no such thing as Linaro 9.x Clannad..." -h ;;
-            "linaro:10") die "There's no such thing as Linaro 10.x Clannad..." -h ;;
-            *) die "Absent or invalid GCC version or source specified!" -h ;;
+        "gnu:4")
+            GCC=gcc-4.9.4
+            BINUTILS_tar="2.29.1"
+            GLIBC="glibc-2.26"
+            ISL="isl-0.17.1"
+            EXT=gz
+            ;;
+        "gnu:5")
+            GCC=gcc-5.5.0
+            GLIBC="glibc-2.27"
+            ISL="isl-0.17.1"
+            ;;
+        "gnu:6") GCC=gcc-6.5.0 ;;
+        "gnu:7") GCC=gcc-7.5.0 ;;
+        "gnu:8") GCC=gcc-8.4.0 ;;
+        "gnu:9") GCC=gcc-9.3.0 ;;
+        "gnu:10") die "GCC 10.0 is currently a WIP so there is no tarball to download! Either use the git repo or choose a new version..." ;;
+        "linaro:4")
+            GCC=linaro-4.9-2017.01
+            GLIBC="glibc-2.27"
+            ISL="isl-0.17.1"
+            ;;
+        "linaro:5")
+            GCC=linaro-5.5-2017.10
+            GLIBC="glibc-2.27"
+            ISL="isl-0.17.1"
+            ;;
+        "linaro:6") GCC=linaro-snapshot-6.5-2018.11 ;;
+        "linaro:7") GCC=linaro-snapshot-7.5-2019.11 ;;
+        # ARM has taken the responsibility from Linaro since 8.x
+        # See later in this script why it's defined like this
+        "linaro:8") GCC=8.3-2019.03 ;;
+        "linaro:9") die "There's no such thing as Linaro 9.x Clannad..." -h ;;
+        "linaro:10") die "There's no such thing as Linaro 10.x Clannad..." -h ;;
+        *) die "Absent or invalid GCC version or source specified!" -h ;;
         esac
     fi
 }
-
 
 # Clean up from a previous compilation
 function clean_up() { #FIXME: we dont need to remove everything everytime.
@@ -303,20 +310,22 @@ function clean_up() { #FIXME: we dont need to remove everything everytime.
     git clean -fxdq -e sources -e prebuilts -e patches
     find . -maxdepth 1 -type l -exec rm -rf {} \; #FIXME
     if [[ -d binutils ]] ||
-       [[ -d build-binutils ]] ||
-       [[ -d build-gcc ]] ||
-       [[ -d build-glibc ]] ||
-       [[ -d gcc ]] ||
-       [[ -d linux ]] ||
-       [[ -f ${TARGET} ]] ||
-       [[ $(for FILE in *.tar.*; do if [[ -f "${FILE}" ]]; then echo "true"; break; else echo "false"; fi done) = "true" ]]; then
+        [[ -d build-binutils ]] ||
+        [[ -d build-gcc ]] ||
+        [[ -d build-glibc ]] ||
+        [[ -d gcc ]] ||
+        [[ -d linux ]] ||
+        [[ -f ${TARGET} ]] ||
+        [[ $(for FILE in *.tar.*; do if [[ -f ${FILE} ]]; then
+            echo "true"
+            break
+        else echo "false"; fi; done) == "true" ]]; then
 
         die "Clean up failed! Aborting. Try checking that you have proper permissions to delete files."
     else
         echo "Clean up successful!"
     fi
 }
-
 
 function build_binaries() {
     ROOT=${PWD}
@@ -369,7 +378,6 @@ function build_binaries() {
     fi
 }
 
-
 function download_sources() {
     cd sources || die "Failed to create sources directory!"
 
@@ -395,7 +403,7 @@ function download_sources() {
 
     if [[ ! -f linux-${LINUX}.tar.xz ]]; then
         header "DOWNLOADING LINUX KERNEL"
-        axel https://cdn.kernel.org/pub/linux/kernel/v${LINUX/.*}.x/linux-${LINUX}.tar.xz
+        axel https://cdn.kernel.org/pub/linux/kernel/v${LINUX/.*/}.x/linux-${LINUX}.tar.xz
     fi
 
     if [[ -z ${TARBALLS} ]]; then
@@ -426,7 +434,7 @@ function download_sources() {
         fi
 
         # GNU, any version
-        if [[ ${SOURCE} = "gnu" ]]; then
+        if [[ ${SOURCE} == "gnu" ]]; then
             if [[ ! -f ${GCC}.tar.${EXT:-xz} ]]; then
                 header "DOWNLOADING GCC"
                 axel https://mirrors.kernel.org/gnu/gcc/${GCC}/${GCC}.tar.${EXT:-xz}
@@ -451,16 +459,14 @@ function download_sources() {
 
 }
 
-
 function extract() {
     case "${1}" in
-        *.gz) UNPACK=pigz ;;
-        *.xz) UNPACK=pxz ;;
+    *.gz) UNPACK=pigz ;;
+    *.xz) UNPACK=pxz ;;
     esac
     mkdir -p "${2}"
-    ${UNPACK} -d < "${1}" | tar -xC "${2}" --strip-components=1
+    ${UNPACK} -d <"${1}" | tar -xC "${2}" --strip-components=1
 }
-
 
 # Extract tarballs to their proper locations
 function extract_sources() {
@@ -473,17 +479,16 @@ function extract_sources() {
     if [[ -n ${TARBALLS} ]]; then
         extract binutils-${BINUTILS_tar}.tar.xz ../binutils
         extract ${ISL}.tar.xz ../${ISL}
-        if [[ ${SOURCE} = "linaro" && ${VERSION} -ge 8 ]]; then
+        if [[ ${SOURCE} == "linaro" && ${VERSION} -ge 8 ]]; then
             # We can't use extract function here as this ships other GNU tools
             # Only extract GCC source and later rename it to gcc
-            pxz -d < ${GCC_TAR} | tar -xC .. gcc-arm-src-snapshot-${GCC}
+            pxz -d <${GCC_TAR} | tar -xC .. gcc-arm-src-snapshot-${GCC}
             mv -f ../gcc-arm-src-snapshot-${GCC} ../gcc
         else
             extract ${GCC_TAR} ../gcc
         fi
     fi
 }
-
 
 # Update git repos
 function update_repos() {
@@ -521,7 +526,6 @@ function update_repos() {
     [[ ! -d binutils ]] && ln -s sources/binutils binutils
     [[ ! -d gcc ]] && ln -s sources/gcc gcc
 }
-
 
 # Setup source folders and build folders
 function setup_env() {
@@ -564,7 +568,7 @@ function setup_env() {
         GCC_PATCH="GCC_10_up"
     fi
 
-    patch -Np1 < "${ROOT}"/patches/${GCC_PATCH}.patch || die "Failed to patch GCC source!"
+    patch -Np1 <"${ROOT}"/patches/${GCC_PATCH}.patch || die "Failed to patch GCC source!"
 
     cd ..
 
@@ -575,19 +579,17 @@ function setup_env() {
     fi
 }
 
-
 # Build binutils
 function build_binutils() {
     header "BUILDING BINUTILS"
     cd build-binutils || die "binutils build folder does not exist!"
     ../binutils/configure "${CONFIGURATION[@]}" \
-                          --target=${TARGET} \
-                          --prefix="${INSTALL}" \
-                          --disable-gdb
+        --target=${TARGET} \
+        --prefix="${INSTALL}" \
+        --disable-gdb
     make "${JOBS}" || die "Error while building binutils!" -n
     make install "${JOBS}" || die "Error while installing binutils!" -n
 }
-
 
 # Make Linux kernel headers
 function build_headers() {
@@ -598,40 +600,38 @@ function build_headers() {
         headers_install "${JOBS}" || die "Error while building/installing Linux headers!" -n
 }
 
-
 # Build GCC
 function build_gcc() {
     header "MAKING GCC"
     cd ../build-gcc || die "GCC build folder does not exist!"
     ../gcc/configure "${CONFIGURATION[@]}" \
-                     --enable-languages=c,c++ \
-                     --target=${TARGET} \
-                     --prefix="${INSTALL}"
+        --enable-languages=c,c++ \
+        --target=${TARGET} \
+        --prefix="${INSTALL}"
     make all-gcc "${JOBS}" || die "Error while building gcc!" -n
     make install-gcc "${JOBS}" || die "Error while installing gcc!" -n
-    if [[ ${ARCH} = "x86_64" ]]; then
+    if [[ ${ARCH} == "x86_64" ]]; then
         make all-target-libgcc "${JOBS}" || die "Error while installing libgcc for host!" -n
         make install-target-libgcc "${JOBS}" || die "Error while installing libgcc for target!" -n
     fi
 }
-
 
 # Build glibc
 function build_glibc() {
     header "MAKING GLIBC"
     cd ../build-glibc || die "glibc build folder does not exist!"
     ../${GLIBC}/configure --prefix="${INSTALL}/${TARGET}" \
-                          --build="${MACHTYPE}" \
-                          --host=${TARGET} \
-                          --target=${TARGET} \
-                          --with-headers="${INSTALL}/${TARGET}/include" \
-                          "${CONFIGURATION[@]}" libc_cv_forced_unwind=yes
+        --build="${MACHTYPE}" \
+        --host=${TARGET} \
+        --target=${TARGET} \
+        --with-headers="${INSTALL}/${TARGET}/include" \
+        "${CONFIGURATION[@]}" libc_cv_forced_unwind=yes
     make install-bootstrap-headers=yes install-headers "${JOBS}" || die "Error installing headers for glibc!" -n
     make csu/subdir_lib "${JOBS}" || die "Error while making subdir_lib for glibc!" -n
     install csu/crt1.o csu/crti.o csu/crtn.o "${INSTALL}/${TARGET}/lib"
     ${TARGET}-gcc -nostdlib -nostartfiles -shared -x c /dev/null -o "${INSTALL}/${TARGET}/lib/libc.so"
     touch "${INSTALL}/${TARGET}/include/gnu/stubs.h"
-    if [[ ${ARCH} = "x86_64" ]]; then
+    if [[ ${ARCH} == "x86_64" ]]; then
         make "${JOBS}" || die "Error while building glibc for the host!" -n
         make install "${JOBS}" || die "Error while installing glibc for the host!" -n
     else
@@ -645,7 +645,6 @@ function build_glibc() {
     fi
 }
 
-
 # Install GCC
 function install_gcc() {
     header "INSTALLING GCC"
@@ -654,7 +653,6 @@ function install_gcc() {
     make install "${JOBS}" || die "Error while installing final toolchain!" -n
     cd ..
 }
-
 
 # Package toolchain
 function package_tc() {
@@ -666,18 +664,20 @@ function package_tc() {
         echo "Target file: ${PACKAGE}"
 
         case "${COMPRESSION}" in
-            "gz")
-                echo "Packaging with GZIP..."
-                GZ_OPT=-9 tar -c --use-compress-program=pigz -f "${PACKAGE}" ${TARGET} ;;
-            "xz")
-                echo "Packaging with XZ..."
-                XZ_OPT=-9 tar -c --use-compress-program=pxz -f "${PACKAGE}" ${TARGET} ;;
-            *)
-                die "Invalid compression specified... skipping" ;;
+        "gz")
+            echo "Packaging with GZIP..."
+            GZ_OPT=-9 tar -c --use-compress-program=pigz -f "${PACKAGE}" ${TARGET}
+            ;;
+        "xz")
+            echo "Packaging with XZ..."
+            XZ_OPT=-9 tar -c --use-compress-program=pxz -f "${PACKAGE}" ${TARGET}
+            ;;
+        *)
+            die "Invalid compression specified... skipping"
+            ;;
         esac
     fi
 }
-
 
 # Ending information
 function ending_info() {
@@ -701,7 +701,6 @@ function ending_info() {
     # Alert to script end
     echo "\a"
 }
-
 
 setup_variables
 parse_parameters "${@}"
