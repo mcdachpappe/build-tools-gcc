@@ -149,10 +149,7 @@ function setup_variables() {
     YLW="\033[01;33m"
 
     # Configuration variables
-    CONFIGURATION=(
-        "CFLAGS=-g0 -O2 -fstack-protector-strong" "CXXFLAGS=-g0 -O2 -fstack-protector-strong"
-        "--disable-multilib" "--disable-werror"
-    )
+    CONFIGURATION=("--disable-multilib" "--disable-werror")
     JOBS="-j$(($(nproc --all) + 1))"
 
     # Binary versions
@@ -487,9 +484,11 @@ function setup_env() {
 function build_binutils() {
     header "BUILDING BINUTILS"
     cd build-binutils || die "binutils build folder does not exist!"
-    ../binutils/configure "${CONFIGURATION[@]}" \
-        --target=${TARGET} \
+    ../binutils/configure \
+        CFLAGS="-O2 -fstack-protector-strong" CXXFLAGS="-O2 -fstack-protector-strong" \
         --prefix="${INSTALL}" \
+        --target=${TARGET} \
+        "${CONFIGURATION[@]}" \
         --disable-gdb
     make "${JOBS}" || die "Error while building binutils!" -n
     make install "${JOBS}" || die "Error while installing binutils!" -n
@@ -508,10 +507,12 @@ function build_headers() {
 function build_gcc() {
     header "MAKING GCC"
     cd ../build-gcc || die "GCC build folder does not exist!"
-    ../gcc/configure "${CONFIGURATION[@]}" \
-        --enable-languages=c,c++ \
+    ../gcc/configure \
+        CFLAGS="-O2 -fstack-protector-strong" CXXFLAGS="-O2 -fstack-protector-strong" \
+        --prefix="${INSTALL}" \
         --target=${TARGET} \
-        --prefix="${INSTALL}"
+        "${CONFIGURATION[@]}" \
+        --enable-languages=c,c++
     make all-gcc "${JOBS}" || die "Error while building gcc!" -n
     make install-gcc "${JOBS}" || die "Error while installing gcc!" -n
     if [[ ${ARCH} == "x86_64" ]]; then
@@ -524,13 +525,15 @@ function build_gcc() {
 function build_glibc() {
     header "MAKING GLIBC"
     cd ../build-glibc || die "glibc build folder does not exist!"
-    ../${GLIBC}/configure --prefix="${INSTALL}/${TARGET}" \
+    ../${GLIBC}/configure \
+        CFLAGS="-O2" CXXFLAGS="-O2" \
+        --prefix="${INSTALL}/${TARGET}" \
         --build="${MACHTYPE}" \
         --host=${TARGET} \
         --target=${TARGET} \
         --with-headers="${INSTALL}/${TARGET}/include" \
-        --enable-stack-protector=strong \
         "${CONFIGURATION[@]}" \
+        --enable-stack-protector=strong \
         libc_cv_forced_unwind=yes with_selinux=no
     make install-bootstrap-headers=yes install-headers "${JOBS}" || die "Error installing headers for glibc!" -n
     make csu/subdir_lib "${JOBS}" || die "Error while making subdir_lib for glibc!" -n
