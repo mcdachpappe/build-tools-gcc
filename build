@@ -162,9 +162,9 @@ function setup_variables() {
     GMP="gmp-6.2.1"
     MPFR="mpfr-4.1.0"
     MPC="mpc-1.2.1"
-    ISL="isl-0.23"
+    ISL="isl-0.24"
     GLIBC="glibc-2.33"
-    LINUX="5.11.11"
+    LINUX="5.12"
 
     # Start of script
     START=$(date +%s)
@@ -229,7 +229,7 @@ function parse_parameters() {
         ;;
     "gnu:6") GCC=gcc-6.5.0 ;;
     "gnu:7") GCC=gcc-7.5.0 ;;
-    "gnu:8") GCC=gcc-8.4.0 ;;
+    "gnu:8") GCC=gcc-8.5.0 ;;
     "gnu:9") GCC=gcc-9.3.0 ;;
     "gnu:10") GCC=gcc-10.3.0 ;;
     "gnu:11") GCC=gcc-11.1.0 ;;
@@ -244,7 +244,7 @@ function parse_parameters() {
         GLIBC="glibc-2.27"
         ISL="isl-0.17.1"
         ;;
-    "linaro:6") GCC=linaro-snapshot-6.5-2018.11 ;;
+    "linaro:6") GCC=linaro-6.5-2018.12 ;;
     "linaro:7") GCC=linaro-7.5-2019.12 ;;
     # ARM has taken the responsibility from Linaro since 8.x
     # See later in this script why it's defined like this
