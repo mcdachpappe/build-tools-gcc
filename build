@@ -149,11 +149,8 @@ function setup_variables() {
     YLW="\033[01;33m"
 
     # Configuration variables
-    REVISION=$(printf 'r%s g%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short=8 HEAD)")
     CONFIGURATION=(
         "--disable-multilib" "--disable-werror"
-        "--with-bugurl=https://github.com/krasCGQ/build-tools-gcc/issues"
-        "--with-pkgversion=build-tools-gcc ${REVISION}"
     )
     JOBS="-j$(($(nproc --all) + 1))"
 
