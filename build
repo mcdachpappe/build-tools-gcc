@@ -17,7 +17,7 @@
 # http://www.mpfr.org/
 # https://gmplib.org/
 # http://www.multiprecision.org/
-# http://isl.gforge.inria.fr/
+# http://isl.gforge.inria.fr/       https://gcc.gnu.org/pub/gcc/infrastructure/
 # https://www.gnu.org/software/binutils/
 # https://www.gnu.org/software/libc/
 # https://www.kernel.org/
@@ -284,6 +284,15 @@ function build_binaries() {
     PREBUILTS_BIN=${ROOT}/prebuilts/bin
     mkdir -p sources
 
+    if [[ ! -f ${PREBUILTS_BIN}/bzip2 ]]; then
+        BZIP2=${ROOT}/sources/bzip2
+        [[ ! -d ${BZIP2} ]] && git -C "$(dirname "${BZIP2}")" clone --depth=1 https://github.com/LuaDist/bzip2
+        git -C "${BZIP2}" clean -fxdq
+        git -C "${BZIP2}" pull
+        make -C "${BZIP2}" "${JOBS}" bzip2 || die "Error building pigz!"
+        mv "${BZIP2}"/bzip2 "${PREBUILTS_BIN}"
+    fi
+
     if [[ ! -f ${PREBUILTS_BIN}/pigz ]]; then
         PIGZ=${ROOT}/sources/pigz
         [[ ! -d ${PIGZ} ]] && git -C "$(dirname "${PIGZ}")" clone --depth=1 https://github.com/madler/pigz
@@ -368,9 +377,9 @@ function download_sources() {
         wget https://ftp.gnu.org/gnu/binutils/binutils-${BINUTILS}.tar.lz
     fi
 
-    if [[ ! -f ${ISL}.tar.xz ]]; then
+    if [[ ! -f ${ISL}.tar.bz2 ]]; then
         header "DOWNLOADING ISL ${ISL} FOR GCC ${VERSION}"
-        wget http://isl.gforge.inria.fr/${ISL}.tar.xz
+        wget https://gcc.gnu.org/pub/gcc/infrastructure//${ISL}.tar.bz2
     fi
 
     # GNU, any version
@@ -400,6 +409,7 @@ function download_sources() {
 
 function extract() {
     case "${1}" in
+    *.bz2) UNPACK=bzip2 ;;
     *.gz) UNPACK=pigz ;;
     *.lz) UNPACK=plzip ;;
     *.xz) UNPACK=pxz ;;
@@ -417,7 +427,7 @@ function extract_sources() {
     extract ${GLIBC}.tar.xz ../${GLIBC}
     extract linux-${LINUX}.tar.xz ../linux
     extract binutils-${BINUTILS}.tar.lz ../binutils
-    extract ${ISL}.tar.xz ../${ISL}
+    extract ${ISL}.tar.bz2 ../${ISL}
     if [[ ${SOURCE} == "linaro" && ${VERSION} -ge 8 ]]; then
         # We can't use extract function here as this ships other GNU tools
         # Only extract GCC source and later rename it to gcc
