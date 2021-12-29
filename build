@@ -260,6 +260,7 @@ function clean_up() { #FIXME: we dont need to remove everything everytime.
 function build_binaries() {
     ROOT=${PWD}
     PREBUILTS_BIN=${ROOT}/prebuilts/bin
+    mkdir -p ${PREBUILTS_BIN}
     mkdir -p sources
 
     if [[ ! -f ${PREBUILTS_BIN}/bzip2 ]]; then
