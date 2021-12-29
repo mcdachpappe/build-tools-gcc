@@ -121,25 +121,6 @@ function format_time() {
     echo "${TIME_STRING}"
 }
 
-# Check if user needs to enter sudo password or not
-function check_sudo() {
-    echo
-    echo "Checking if sudo is available, please enter your password if a prompt appears!"
-    if ! sudo true 2>/dev/null; then
-        warn "Sudo is not available! Disabling the option for tmpfs..." -n
-        NO_TMPFS=true
-    fi
-}
-
-# Unmount tmpfs
-function unmount_tmpfs() {
-    if [[ -z ${NO_TMPFS} ]]; then
-        sudo umount -f build-glibc 2>/dev/null
-        sudo umount -f build-gcc 2>/dev/null
-        sudo umount -f build-binutils 2>/dev/null
-    fi
-}
-
 # Initial setup
 function setup_variables() {
     # Colors
@@ -178,7 +159,6 @@ function parse_parameters() {
 
         # OPTIONAL FLAGS
         "-j" | "--jobs") shift && JOBS=-j${1} ;;
-        "-nt" | "--no-tmpfs") NO_TMPFS=true ;;
         "-p" | "--package") shift && COMPRESSION=${1} ;;
         "-V" | "--verbose") VERBOSE=true ;;
 
@@ -192,7 +172,6 @@ function parse_parameters() {
         shift
     done
 
-    [[ -z ${NO_TMPFS} ]] && check_sudo
     [[ -z ${VERBOSE} ]] && exec 6>&2 5>&1 &>/dev/null
 
     # Default values
@@ -258,7 +237,6 @@ function parse_parameters() {
 function clean_up() { #FIXME: we dont need to remove everything everytime.
     header "CLEANING UP"
 
-    unmount_tmpfs
     git clean -fxdq -e sources -e prebuilts -e patches
     find . -maxdepth 1 -type l -exec rm -rf {} \; #FIXME
     if [[ -d binutils ]] ||
@@ -451,12 +429,6 @@ function setup_env() {
     mkdir build-gcc
     mkdir build-binutils
 
-    if [[ -z ${NO_TMPFS} ]]; then
-        sudo mount -t tmpfs -o rw none build-glibc
-        sudo mount -t tmpfs -o rw none build-gcc
-        sudo mount -t tmpfs -o rw none build-binutils
-    fi
-
     cd gcc || die "GCC folder does not exit!"
     ln -s -f "${ROOT}/${MPFR}" mpfr
     ln -s -f "${ROOT}/${GMP}" gmp
@@ -625,8 +597,6 @@ function ending_info() {
 
 setup_variables
 parse_parameters "${@}"
-trap 'unmount_tmpfs; die "Manually aborted!" -n' SIGINT SIGTERM
-trap 'unmount_tmpfs' EXIT
 clean_up
 build_binaries
 download_sources
